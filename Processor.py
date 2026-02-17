@@ -1,3 +1,29 @@
+OPCODE_FUNCT = {
+
+    "add":  {"opcode": "000000", "funct": "100000"},
+    "sub":  {"opcode": "000000", "funct": "100010"},
+    "addi": {"opcode": "001000", "funct": None},
+
+    "lw":   {"opcode": "100011", "funct": None},
+    "sw":   {"opcode": "101011", "funct": None},
+
+    "and":  {"opcode": "000000", "funct": "100100"},
+    "or":   {"opcode": "000000", "funct": "100101"},
+    "andi": {"opcode": "001100", "funct": None},
+    "ori":  {"opcode": "001101", "funct": None},
+    "sll":  {"opcode": "000000", "funct": "000000"},
+    "srl":  {"opcode": "000000", "funct": "000010"},
+
+    "beq":  {"opcode": "000100", "funct": None},
+    "bne":  {"opcode": "000101", "funct": None},
+    "slt":  {"opcode": "000000", "funct": "101010"},
+    "sltu": {"opcode": "000000", "funct": "101011"},
+
+    "j":    {"opcode": "000010", "funct": None},
+}
+
+
+
 def to_signed32(x):
     x &= ((1 << 32) - 1)
     return x if x < (1<<31) else x - (1 << 32)
