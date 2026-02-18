@@ -1,26 +1,89 @@
 OPCODE_FUNCT = {
 
-    "add":  {"opcode": "000000", "funct": "100000"},
-    "sub":  {"opcode": "000000", "funct": "100010"},
-    "addi": {"opcode": "001000", "funct": None},
+    "add":  {"opcode":"000000","funct":"100000",
+             "RegDst":1,"ALUSrc":0,"MemtoReg":0,
+             "RegWrite":1,"MemRead":0,"MemWrite":0,
+             "Branch":0,"Jump":0,"ALUOp":"10"},
 
-    "lw":   {"opcode": "100011", "funct": None},
-    "sw":   {"opcode": "101011", "funct": None},
+    "sub":  {"opcode":"000000","funct":"100010",
+             "RegDst":1,"ALUSrc":0,"MemtoReg":0,
+             "RegWrite":1,"MemRead":0,"MemWrite":0,
+             "Branch":0,"Jump":0,"ALUOp":"10"},
 
-    "and":  {"opcode": "000000", "funct": "100100"},
-    "or":   {"opcode": "000000", "funct": "100101"},
-    "andi": {"opcode": "001100", "funct": None},
-    "ori":  {"opcode": "001101", "funct": None},
-    "sll":  {"opcode": "000000", "funct": "000000"},
-    "srl":  {"opcode": "000000", "funct": "000010"},
+    "and":  {"opcode":"000000","funct":"100100",
+             "RegDst":1,"ALUSrc":0,"MemtoReg":0,
+             "RegWrite":1,"MemRead":0,"MemWrite":0,
+             "Branch":0,"Jump":0,"ALUOp":"10"},
 
-    "beq":  {"opcode": "000100", "funct": None},
-    "bne":  {"opcode": "000101", "funct": None},
-    "slt":  {"opcode": "000000", "funct": "101010"},
-    "sltu": {"opcode": "000000", "funct": "101011"},
+    "or":   {"opcode":"000000","funct":"100101",
+             "RegDst":1,"ALUSrc":0,"MemtoReg":0,
+             "RegWrite":1,"MemRead":0,"MemWrite":0,
+             "Branch":0,"Jump":0,"ALUOp":"10"},
 
-    "j":    {"opcode": "000010", "funct": None},
+    "slt":  {"opcode":"000000","funct":"101010",
+             "RegDst":1,"ALUSrc":0,"MemtoReg":0,
+             "RegWrite":1,"MemRead":0,"MemWrite":0,
+             "Branch":0,"Jump":0,"ALUOp":"10"},
+
+    "sltu": {"opcode":"000000","funct":"101011",
+             "RegDst":1,"ALUSrc":0,"MemtoReg":0,
+             "RegWrite":1,"MemRead":0,"MemWrite":0,
+             "Branch":0,"Jump":0,"ALUOp":"10"},
+
+    "sll":  {"opcode":"000000","funct":"000000",
+             "RegDst":1,"ALUSrc":0,"MemtoReg":0,
+             "RegWrite":1,"MemRead":0,"MemWrite":0,
+             "Branch":0,"Jump":0,"ALUOp":"10"},
+
+    "srl":  {"opcode":"000000","funct":"000010",
+             "RegDst":1,"ALUSrc":0,"MemtoReg":0,
+             "RegWrite":1,"MemRead":0,"MemWrite":0,
+             "Branch":0,"Jump":0,"ALUOp":"10"},
+
+
+    "addi": {"opcode":"001000","funct":None,
+             "RegDst":0,"ALUSrc":1,"MemtoReg":0,
+             "RegWrite":1,"MemRead":0,"MemWrite":0,
+             "Branch":0,"Jump":0,"ALUOp":"00"},
+
+    "andi": {"opcode":"001100","funct":None,
+             "RegDst":0,"ALUSrc":1,"MemtoReg":0,
+             "RegWrite":1,"MemRead":0,"MemWrite":0,
+             "Branch":0,"Jump":0,"ALUOp":"11"},
+
+    "ori":  {"opcode":"001101","funct":None,
+             "RegDst":0,"ALUSrc":1,"MemtoReg":0,
+             "RegWrite":1,"MemRead":0,"MemWrite":0,
+             "Branch":0,"Jump":0,"ALUOp":"11"},
+
+    "lw":   {"opcode":"100011","funct":None,
+             "RegDst":0,"ALUSrc":1,"MemtoReg":1,
+             "RegWrite":1,"MemRead":1,"MemWrite":0,
+             "Branch":0,"Jump":0,"ALUOp":"00"},
+
+    "sw":   {"opcode":"101011","funct":None,
+             "RegDst":None,"ALUSrc":1,"MemtoReg":None,
+             "RegWrite":0,"MemRead":0,"MemWrite":1,
+             "Branch":0,"Jump":0,"ALUOp":"00"},
+
+
+    "beq":  {"opcode":"000100","funct":None,
+             "RegDst":None,"ALUSrc":0,"MemtoReg":None,
+             "RegWrite":0,"MemRead":0,"MemWrite":0,
+             "Branch":1,"Jump":0,"ALUOp":"01"},
+
+    "bne":  {"opcode":"000101","funct":None,
+             "RegDst":None,"ALUSrc":0,"MemtoReg":None,
+             "RegWrite":0,"MemRead":0,"MemWrite":0,
+             "Branch":1,"Jump":0,"ALUOp":"01"},
+
+
+    "j":    {"opcode":"000010","funct":None,
+             "RegDst":None,"ALUSrc":None,"MemtoReg":None,
+             "RegWrite":0,"MemRead":0,"MemWrite":0,
+             "Branch":0,"Jump":1,"ALUOp":None},
 }
+
 
 
 
