@@ -1,4 +1,4 @@
-OPCODE_FUNCT = {
+R_TYPE_OPCODE = {
 
     "add":  {"opcode":"000000","funct":"100000",
              "RegDst":1,"ALUSrc":0,"MemtoReg":0,
@@ -25,11 +25,6 @@ OPCODE_FUNCT = {
              "RegWrite":1,"MemRead":0,"MemWrite":0,
              "Branch":0,"Jump":0,"ALUOp":"10"},
 
-    "sltu": {"opcode":"000000","funct":"101011",
-             "RegDst":1,"ALUSrc":0,"MemtoReg":0,
-             "RegWrite":1,"MemRead":0,"MemWrite":0,
-             "Branch":0,"Jump":0,"ALUOp":"10"},
-
     "sll":  {"opcode":"000000","funct":"000000",
              "RegDst":1,"ALUSrc":0,"MemtoReg":0,
              "RegWrite":1,"MemRead":0,"MemWrite":0,
@@ -38,18 +33,15 @@ OPCODE_FUNCT = {
     "srl":  {"opcode":"000000","funct":"000010",
              "RegDst":1,"ALUSrc":0,"MemtoReg":0,
              "RegWrite":1,"MemRead":0,"MemWrite":0,
-             "Branch":0,"Jump":0,"ALUOp":"10"},
+             "Branch":0,"Jump":0,"ALUOp":"10"}
+}
 
 
+OPCODE_FUNCT = {
     "addi": {"opcode":"001000","funct":None,
              "RegDst":0,"ALUSrc":1,"MemtoReg":0,
              "RegWrite":1,"MemRead":0,"MemWrite":0,
              "Branch":0,"Jump":0,"ALUOp":"00"},
-
-    "andi": {"opcode":"001100","funct":None,
-             "RegDst":0,"ALUSrc":1,"MemtoReg":0,
-             "RegWrite":1,"MemRead":0,"MemWrite":0,
-             "Branch":0,"Jump":0,"ALUOp":"11"},
 
     "ori":  {"opcode":"001101","funct":None,
              "RegDst":0,"ALUSrc":1,"MemtoReg":0,
@@ -81,18 +73,11 @@ OPCODE_FUNCT = {
     "j":    {"opcode":"000010","funct":None,
              "RegDst":None,"ALUSrc":None,"MemtoReg":None,
              "RegWrite":0,"MemRead":0,"MemWrite":0,
-             "Branch":0,"Jump":1,"ALUOp":None},
+             "Branch":0,"Jump":1,"ALUOp":None}
 }
 
 
-
-
-def to_signed32(x):
-    x &= ((1 << 32) - 1)
-    return x if x < (1<<31) else x - (1 << 32)
-
-
-opcodes = {}
+ 
 
 
 
@@ -120,16 +105,16 @@ class Memory:
         with open(self.data_memory, "r") as f:
             for i, line in enumerate(f):
                 if i == addr:
-                    return to_signed32(int(line.strip(), 2))
-        return 0
+                    return line.strip()
+        return ""
 
 
     def read_instr(self, addr):
         with open(self.instr_memory, "r") as f:
             for i, line in enumerate(f):
                 if i == addr:
-                    return to_signed32(int(line.strip(), 2))
-        return 0
+                    return line.strip()
+        return ""
 
     def write_data(self, addr, value):
         value &= ((1 << 32) - 1)
@@ -169,14 +154,148 @@ class CPU:
         self.running = True
         self.instr=""
         self.data=""
+        self.opcode =""
+        self.rs=""
+        self.rt=""
+        self.rd=""
+        self.shamt=""
+        self.func = ""
+        self.imme = ""
+        self.jaddr = ""
+        self.ctrl = ""
+        self.current_instr = ""
+        self.alu_result = ""
 
     def IF_stage(self):
-        self.instr = str(self.mem.read_instr(self.reg.pc//4))
+        self.instr = self.mem.read_instr(self.reg.pc//4)
         self.reg.pc+=4
 
 
     def ID_stage(self):
-        opcode = self.instr[0:6]
+        self.opcode = self.instr[0:6]
+        self.rs = int(self.instr[6:11],2)
+        self.rt = int(self.instr[11:16],2)
+        
+        if self.opcode == "000000":
+            self.rd = int(self.instr[16:21],2)
+            self.shamt = int(self.instr[21:26],2)
+            self.func = self.instr[26:32]
+            
+            
+            for name,signals in R_TYPE_OPCODE.items():
+                if signals["funct"] == self.func:
+                    self.ctrl = signals
+                    self.current_instr = name
+
+
+        elif self.opcode in ["000010"] :
+            self.jaddr = int(self.instr[6:32],2)
+            self.current_instr = "j"
+
+            self.ctrl = {"opcode":"000010","funct":None,
+             "RegDst":None,"ALUSrc":None,"MemtoReg":None,
+             "RegWrite":0,"MemRead":0,"MemWrite":0,
+             "Branch":0,"Jump":1,"ALUOp":None}
+
+        else:
+            self.rd = None
+            raw_imm = int(self.instr[16:32], 2)
+            if raw_imm & 0x8000:
+                self.imme = raw_imm - 0x10000
+            else:
+                self.imme = raw_imm
+
+            for name, signals in OPCODE_FUNCT.items():
+                if signals["opcode"] == self.opcode:
+                    self.ctrl = signals
+                    self.current_instr = name
+
+    def get_register_val(self,register_idx):
+        if register_idx == 0: return 0
+
+        if 8<=register_idx<=15: return self.reg.t[register_idx-8]
+
+        if 16<=register_idx<=23: return self.reg.s[register_idx-16]
+
+        if 24<=register_idx<=25: return self.reg.t[register_idx-16]
+
+        return 0
+
+    def EX_stage(self):
+
+
+        # 1. Fetch Operands
+        val_at_rs = self.get_register_val(self.rs)
+        val_at_rt = self.get_register_val(self.rt)
+
+        # 2. ALU Mux: Choose between Register (0) or Immediate (1)
+        if self.ctrl["ALUSrc"] == 0:
+            operand_b = val_at_rt
+        else:
+            operand_b = self.imme
+
+        # 3. ALU Operations
+        if self.current_instr == "add":
+            self.alu_result = val_at_rs + operand_b
+            
+        elif self.current_instr == "sub":
+            self.alu_result = val_at_rs - operand_b
+
+        elif self.current_instr == "and":
+            self.alu_result = val_at_rs & operand_b
+
+        elif self.current_instr == "or":
+            self.alu_result = val_at_rs | operand_b
+
+        elif self.current_instr == "sll":
+            # Shift rt, not rs
+            self.alu_result = val_at_rt << self.shamt
+
+        elif self.current_instr == "srl":
+            # Shift rt, not rs
+            self.alu_result = val_at_rt >> self.shamt
+            
+        elif self.current_instr == "slt":
+            self.alu_result = 1 if val_at_rs < operand_b else 0
+
+        elif self.current_instr == "addi":
+            self.alu_result = val_at_rs + operand_b
+
+        elif self.current_instr == "ori":
+            self.alu_result = val_at_rs | operand_b
+
+        # 4. Memory Address Calculation (Base + Offset)
+        elif self.current_instr in ["lw", "sw"]:
+            self.alu_result = val_at_rs + self.imme
+
+        # 5. Branch Operations
+        # Target = PC + (Offset * 4). Note: PC was already +4 in IF_stage.
+        elif self.current_instr == "beq":
+            if val_at_rs == val_at_rt:
+                self.reg.pc += (self.imme * 4)
+
+        elif self.current_instr == "bne":
+            if val_at_rs != val_at_rt:
+                self.reg.pc += (self.imme * 4)
+
+
+        elif self.current_instr == "j":
+            c_upper = (self.reg.pc & 0xF0000000)
+            self.reg.pc = pc_upper | (self.jaddr * 4)
+    # Concatenate PC upper bits with jaddr shifted left by 2
+    
+
+
+
+
+
+
+    
+
+
+
+
+
 
     
 
