@@ -1,6 +1,9 @@
 TEXT_BASE = 0x00400000
 DATA_BASE = 0x10010000
 
+TEXT_BASE = 0x00400000
+DATA_BASE = 0x10010000
+
 R_TYPE_OPCODE = {
 
     "add":  {"opcode":"000000","funct":"100000",
@@ -342,6 +345,7 @@ class CPU:
 
 
         elif self.current_instr == "j":
+            pc_upper = (self.reg.pc & 0xF0000000)
             pc_upper = (self.reg.pc & 0xF0000000)
             self.reg.pc = pc_upper | (self.jaddr * 4)
     # Concatenate PC upper bits with jaddr shifted left by 2
