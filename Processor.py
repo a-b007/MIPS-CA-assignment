@@ -1,3 +1,6 @@
+TEXT_BASE = 0x00400000
+DATA_BASE = 0x10010000
+
 R_TYPE_OPCODE = {
 
     "add":  {"opcode":"000000","funct":"100000",
@@ -85,7 +88,7 @@ class Register:
     def __init__(self):
         self.t = [0] * 10
         self.s = [0] * 8
-        self.pc = 0
+        self.pc = TEXT_BASE
 
         self.zero = 0
         self.ra = 0
@@ -160,15 +163,20 @@ class CPU:
         self.rd=""
         self.shamt=""
         self.func = ""
-        self.imme = ""
-        self.jaddr = ""
+        self.imme = 0
+        self.jaddr = 0
         self.ctrl = ""
         self.current_instr = ""
-        self.alu_result = ""
+        self.alu_result = 0
+        self.mem_data = 0
 
     def IF_stage(self):
-        self.instr = self.mem.read_instr(self.reg.pc//4)
-        self.reg.pc+=4
+        self.instr = self.mem.read_instr((self.reg.pc-TEXT_BASE) // 4)
+        if not self.instr: # Stop if no more instructions
+            self.running = False
+            return
+        self.reg.pc += 4
+
 
 
     def ID_stage(self):
@@ -210,15 +218,14 @@ class CPU:
                     self.ctrl = signals
                     self.current_instr = name
 
-    def get_register_val(self,register_idx):
-        if register_idx == 0: return 0
-
-        if 8<=register_idx<=15: return self.reg.t[register_idx-8]
-
-        if 16<=register_idx<=23: return self.reg.s[register_idx-16]
-
-        if 24<=register_idx<=25: return self.reg.t[register_idx-16]
-
+    def get_register_val(self, register_idx):
+        if register_idx == 0: return 0  # $zero
+        if register_idx == 2: return self.reg.v0
+        if register_idx == 3: return self.reg.v1
+        if 8 <= register_idx <= 15: return self.reg.t[register_idx - 8]
+        if 16 <= register_idx <= 23: return self.reg.s[register_idx - 16]
+        if 24 <= register_idx <= 25: return self.reg.t[register_idx - 16] # t8-t9
+        if register_idx == 31: return self.reg.ra
         return 0
 
     def EX_stage(self):
@@ -229,10 +236,8 @@ class CPU:
         val_at_rt = self.get_register_val(self.rt)
 
         # 2. ALU Mux: Choose between Register (0) or Immediate (1)
-        if self.ctrl["ALUSrc"] == 0:
-            operand_b = val_at_rt
-        else:
-            operand_b = self.imme
+        if self.ctrl["ALUSrc"] is not None:
+            operand_b = val_at_rt if self.ctrl["ALUSrc"] == 0 else self.imme
 
         # 3. ALU Operations
         if self.current_instr == "add":
@@ -280,9 +285,60 @@ class CPU:
 
 
         elif self.current_instr == "j":
-            c_upper = (self.reg.pc & 0xF0000000)
+            pc_upper = (self.reg.pc & 0xF0000000)
             self.reg.pc = pc_upper | (self.jaddr * 4)
     # Concatenate PC upper bits with jaddr shifted left by 2
+
+
+    def Mem_stage(self):
+        
+        address = (self.alu_result - DATA_BASE)//4
+
+        if self.ctrl["MemRead"] == 1:
+            raw_data = self.mem.read_data(address)
+            if raw_data:
+                val = int(raw_data, 2)
+                # Check if the sign bit (bit 31) is 1
+                self.mem_data = val - 0x100000000 if val & 0x80000000 else val
+            else:
+                self.mem_data = 0
+
+        if self.ctrl["MemWrite"] == 1:
+            val_at_rt = self.get_register_val(self.rt)
+
+            self.mem.write_data(address,val_at_rt)
+
+
+    def WB_stage(self):
+        if not self.ctrl or self.ctrl["RegWrite"] == 0: return
+        
+        write_value = self.mem_data if self.ctrl["MemtoReg"] == 1 else self.alu_result
+        dest_reg = self.rd if self.ctrl["RegDst"] == 1 else self.rt
+        
+        if dest_reg == 0: return
+        
+        # Mapping logic (must match get_register_val)
+        if dest_reg == 2: self.reg.v0 = write_value
+        elif dest_reg == 3: self.reg.v1 = write_value
+        elif 8 <= dest_reg <= 15: self.reg.t[dest_reg - 8] = write_value
+        elif 16 <= dest_reg <= 23: self.reg.s[dest_reg - 16] = write_value
+        elif 24 <= dest_reg <= 25: self.reg.t[dest_reg - 16] = write_value
+        elif dest_reg == 31: self.reg.ra = write_value
+
+
+    def run(self):
+        while self.running:
+            self.IF_stage()
+            if not self.running: break
+            self.ID_stage()
+            self.EX_stage()
+            self.Mem_stage()
+            self.WB_stage()
+
+cpu=CPU()
+cpu.run()
+            
+
     
 
 
