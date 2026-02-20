@@ -1,8 +1,6 @@
 TEXT_BASE = 0x00400000
 DATA_BASE = 0x10010000
 
-TEXT_BASE = 0x00400000
-DATA_BASE = 0x10010000
 
 R_TYPE_OPCODE = {
 
@@ -108,6 +106,7 @@ class Register:
         self.pc = TEXT_BASE
 
         self.zero = 0
+        self.at = 0
         self.ra = 0
         self.v0 = 0
         self.v1 = 0
@@ -273,6 +272,7 @@ class CPU:
 
     def get_register_val(self, register_idx):
         if register_idx == 0: return 0  # $zero
+        if register_idx == 1: return self.reg.at
         if register_idx == 2: return self.reg.v0
         if register_idx == 3: return self.reg.v1
         if 4 <= register_idx <= 7: return self.reg.a[register_idx - 4]
@@ -362,6 +362,7 @@ class CPU:
             return
 
         if self.ctrl["MemRead"] == 1 or self.ctrl["MemWrite"] == 1:
+            print("ALU_RESULT:", hex(self.alu_result))
             address = (self.alu_result - DATA_BASE)//4
 
         if self.ctrl["MemRead"] == 1:
@@ -392,6 +393,7 @@ class CPU:
         
         # Mapping logic (must match get_register_val)
         if dest_reg == 2: self.reg.v0 = write_value
+        elif dest_reg == 1: self.reg.at = write_value
         elif dest_reg == 3: self.reg.v1 = write_value
         elif 4 <= dest_reg <= 7:
             self.reg.a[dest_reg - 4] = write_value
