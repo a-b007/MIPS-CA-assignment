@@ -52,5 +52,4 @@ fail:
         # Result = -1 (not found)
 
 done:
-    li $v0, 10      # load exit code 10 into $v0
-    syscall         # tells the simulator to halt
+    # tells the simulator to halt
