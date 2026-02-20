@@ -1,6 +1,6 @@
 .data
     a: .word 3, 4, 7, 78, 100, 121, 256
-    k_val: .word 256
+    k_val: .word 4
 
 .text
 .globl main
@@ -52,5 +52,5 @@ fail:
         # Result = -1 (not found)
 
 done:
-    # 16: HALT equivalent
-    # (In MIPS simulator, this would be a syscall or infinite loop)
+    li $v0, 10      # load exit code 10 into $v0
+    syscall         # tells the simulator to halt
