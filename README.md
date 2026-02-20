@@ -16,16 +16,16 @@
    ## Installing JDK
       * Use the following steps to download JDK (Linux based system - ubuntu)
 
-          ''' bash
+          bash
               sudo apt update && sudo apt upgrade
               sudo apt install default-jdk
-          '''
+          
 
       * To verify installation use the command
 
-        ''' bash
+        bash
             java --version
-        '''
+        
 
   ## Installing the MARS Assembler
       * After installing the jdk using the above method used , follow these steps to download MARS MIPS-Assembler
@@ -33,10 +33,10 @@
       * Clone the repo
       * Then run
 
-        '''bash
+        bash
 
           java -jar mars4_5.jar
-        '''
+        
 
       * The assembler is ready to go
 
@@ -45,8 +45,8 @@
 
 * This project has been made by freshman year students of International Institute Information Technology Bangalore (IIITB), India.
 * The name of the contributors are as follows :
-      * Anamitra Basu
-      * Aaronya Chakraborty
-      * Aatraya Mukherjee 
+      Anamitra Basu
+      Aaronya Chakraborty
+      Aatraya Mukherjee 
   
   
