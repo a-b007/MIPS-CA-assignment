@@ -16,14 +16,14 @@
    ## Installing JDK
       * Use the following steps to download JDK (Linux based system - ubuntu)
 
-          bash
+          
               sudo apt update && sudo apt upgrade
               sudo apt install default-jdk
           
 
       * To verify installation use the command
 
-        bash
+        
             java --version
         
 
@@ -33,7 +33,7 @@
       * Clone the repo
       * Then run
 
-        bash
+        
 
           java -jar mars4_5.jar
         
