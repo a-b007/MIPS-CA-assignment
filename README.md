@@ -41,6 +41,16 @@
       * The assembler is ready to go
 
 
+
+# Running the project 
+
+* Clone the repo.
+* The repo consists of Processor.py that needs to be executed to get output.
+* Put your assembly code in the MARS assembler then dump the instructions and data segments seperately
+
+* Follow these steps as shown below :
+
+
 # CONTRIBUTORS
 
 * This project has been made by freshman year students of International Institute Information Technology Bangalore (IIITB), India.
