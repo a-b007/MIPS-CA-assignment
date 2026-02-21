@@ -2,7 +2,7 @@ TEXT_BASE = 0x00400000
 DATA_BASE = 0x10010000
 
 
-R_TYPE_OPCODE = {
+r_type_instruction = {
 
     "add":  {"opcode":"000000","funct":"100000",
              "RegDst":1,"ALUSrc":0,"MemtoReg":0,
@@ -47,7 +47,7 @@ R_TYPE_OPCODE = {
 }
 
 
-OPCODE_FUNCT = {
+i_j_type_instruction = {
     "addi": {"opcode":"001000","funct":None,
              "RegDst":0,"ALUSrc":1,"MemtoReg":0,
              "RegWrite":1,"MemRead":0,"MemWrite":0,
@@ -93,7 +93,16 @@ OPCODE_FUNCT = {
 }
 
 
- 
+class ALU:
+    def execute(instr, a, b, shamt):
+        if instr == "add": return a + b
+        if instr == "sub": return a - b
+        if instr == "and": return a & b
+        if instr == "or":  return a | b
+        if instr == "slt": return 1 if a < b else 0
+        if instr == "sll": return b << shamt
+        if instr == "srl": return b >> shamt
+        return 0
 
 
 
@@ -214,7 +223,7 @@ class CPU:
 
     def IF_stage(self):
         self.instr = self.mem.read_instr((self.reg.pc-TEXT_BASE) // 4)
-        if not self.instr: # Stop if no more instructions
+        if not self.instr:
             self.running = False
             return
         self.reg.pc += 4
@@ -234,7 +243,7 @@ class CPU:
             self.func = self.instr[26:32]
             
             
-            for name,signals in R_TYPE_OPCODE.items():
+            for name,signals in r_type_instruction.items():
                 if signals["funct"] == self.func:
                     self.ctrl = signals.copy()
                     self.current_instr = name
@@ -258,7 +267,7 @@ class CPU:
             else:
                 self.imme = raw_imm
 
-            for name, signals in OPCODE_FUNCT.items():
+            for name, signals in i_j_type_instruction.items():
                 if signals["opcode"] == self.opcode:
                     self.ctrl = signals.copy()
                     self.current_instr = name
@@ -278,47 +287,22 @@ class CPU:
         if 4 <= register_idx <= 7: return self.reg.a[register_idx - 4]
         if 8 <= register_idx <= 15: return self.reg.t[register_idx - 8]
         if 16 <= register_idx <= 23: return self.reg.s[register_idx - 16]
-        if 24 <= register_idx <= 25: return self.reg.t[register_idx - 16] # t8-t9
+        if 24 <= register_idx <= 25: return self.reg.t[register_idx - 16]
         if register_idx == 31: return self.reg.ra
         return 0
 
     def EX_stage(self):
 
-
-        # 1. Fetch Operands
         val_at_rs = self.get_register_val(self.rs)
         val_at_rt = self.get_register_val(self.rt)
-
-        # 2. ALU Mux: Choose between Register (0) or Immediate (1)
-        operand_b = val_at_rt  # default
+        
+        operand_b = val_at_rt
 
         if self.ctrl and self.ctrl["ALUSrc"] is not None:
             operand_b = val_at_rt if self.ctrl["ALUSrc"] == 0 else self.imme
 
-
-        # 3. ALU Operations
-        if self.current_instr == "add":
-            self.alu_result = val_at_rs + operand_b
-            
-        elif self.current_instr == "sub":
-            self.alu_result = val_at_rs - operand_b
-
-        elif self.current_instr == "and":
-            self.alu_result = val_at_rs & operand_b
-
-        elif self.current_instr == "or":
-            self.alu_result = val_at_rs | operand_b
-
-        elif self.current_instr == "sll":
-            # Shift rt, not rs
-            self.alu_result = val_at_rt << self.shamt
-
-        elif self.current_instr == "srl":
-            # Shift rt, not rs
-            self.alu_result = val_at_rt >> self.shamt
-            
-        elif self.current_instr == "slt":
-            self.alu_result = 1 if val_at_rs < operand_b else 0
+        if self.current_instr in ["add","sub","and","or","slt","sll","srl"]:
+            self.alu_result = ALU.execute( self.current_instr, val_at_rs, operand_b, self.shamt)
 
         elif self.current_instr == "addi":
             self.alu_result = val_at_rs + operand_b
@@ -329,12 +313,9 @@ class CPU:
         elif self.current_instr == "lui":
             self.alu_result = self.imme << 16
 
-        # 4. Memory Address Calculation (Base + Offset)
         elif self.current_instr in ["lw", "sw"]:
             self.alu_result = val_at_rs + self.imme
 
-        # 5. Branch Operations
-        # Target = PC + (Offset * 4). Note: PC was already +4 in IF_stage.
         elif self.current_instr == "beq":
             if val_at_rs == val_at_rt:
                 self.reg.pc += (self.imme * 4)
@@ -348,7 +329,7 @@ class CPU:
             pc_upper = (self.reg.pc & 0xF0000000)
             pc_upper = (self.reg.pc & 0xF0000000)
             self.reg.pc = pc_upper | (self.jaddr * 4)
-    # Concatenate PC upper bits with jaddr shifted left by 2
+
     
         elif self.current_instr == "syscall":
             if self.reg.v0 == 10:
@@ -369,7 +350,7 @@ class CPU:
             raw_data = self.mem.read_data(address)
             if raw_data:
                 val = int(raw_data, 2)
-                # Check if the sign bit (bit 31) is 1
+
                 self.mem_data = val - 0x100000000 if val & 0x80000000 else val
             else:
                 self.mem_data = 0
@@ -432,27 +413,3 @@ file_data=file_list[1]
  
 cpu=CPU(file_instr,file_data)
 cpu.run()
-            
-
-    
-
-
-
-
-
-
-    
-
-
-
-
-
-
-    
-
-
-        
-        
-       
-        
-
