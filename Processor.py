@@ -343,7 +343,6 @@ class CPU:
             return
 
         if self.ctrl["MemRead"] == 1 or self.ctrl["MemWrite"] == 1:
-            print("ALU_RESULT:", hex(self.alu_result))
             address = (self.alu_result - DATA_BASE)//4
 
         if self.ctrl["MemRead"] == 1:
