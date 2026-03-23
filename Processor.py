@@ -280,7 +280,7 @@ class CPU:
 
 
     def get_register_val(self, register_idx):
-        if register_idx == 0: return 0  # $zero
+        if register_idx == 0: return 0  # $zero register
         if register_idx == 1: return self.reg.at
         if register_idx == 2: return self.reg.v0
         if register_idx == 3: return self.reg.v1
@@ -339,17 +339,24 @@ class CPU:
 
     def MEM_stage(self):
         
+        #Invalid instruction (self.ctrl is control signal dictionary)
         if not self.ctrl:
             return
 
+        #DATA_BASE = start of data memory (0x10010000)
+        #If memory is accessed i.e. read or write
         if self.ctrl["MemRead"] == 1 or self.ctrl["MemWrite"] == 1:
             address = (self.alu_result - DATA_BASE)//4
 
+        #reading from memory e.g - Load
         if self.ctrl["MemRead"] == 1:
+            
+            #Raw data is binary string from data.txt
             raw_data = self.mem.read_data(address)
             if raw_data:
                 val = int(raw_data, 2)
 
+                #Sign extension
                 self.mem_data = val - 0x100000000 if val & 0x80000000 else val
             else:
                 self.mem_data = 0
@@ -361,17 +368,22 @@ class CPU:
 
 
     def WB_stage(self):
+        
+        #Invalid instruction
         if not self.ctrl:
             return
+        
+        #If no need for write back e.g. in stor instruction
         if self.ctrl["RegWrite"] == 0:
             return
         
+        #
         write_value = self.mem_data if self.ctrl["MemtoReg"] == 1 else self.alu_result
         dest_reg = self.rd if self.ctrl["RegDst"] == 1 else self.rt
         
         if dest_reg == 0: return
         
-        # Mapping logic (must match get_register_val)
+        
         if dest_reg == 2: self.reg.v0 = write_value
         elif dest_reg == 1: self.reg.at = write_value
         elif dest_reg == 3: self.reg.v1 = write_value
@@ -397,6 +409,7 @@ class CPU:
             
             if self.cycle % 10 == 0:
                 self.print_reg()
+        self.print_reg()
 
 
 
